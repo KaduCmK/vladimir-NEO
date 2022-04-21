@@ -15,7 +15,7 @@ module.exports = {
             interaction.reply({ content: 'Ocorreu um erro executando esse comando.', ephemeral: true });
         }
 
-        // const { commandName } = interaction;
-        console.log(`${interaction.user.tag} utilizou o comando /${interaction.commandName} no canal #${interaction.channel.name}`);
+        // Registrar o comando requisitado no console
+        console.log(`[${interaction.createdAt.toUTCString()}] -  ${interaction.user.tag} utilizou o comando /${interaction.commandName} no canal #${interaction.channel.name}`);
     }
 }
