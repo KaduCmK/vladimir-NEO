@@ -1,0 +1,26 @@
+{
+  "name": "discordjs",
+  "version": "0.0.1",
+  "description": "discord bot built with js",
+  "main": "main.js",
+  "scripts": {
+    "test": "test",
+    "start": "nodemon"
+  },
+  "author": {
+    "name": "Carlos Eduardo",
+    "email": "kaduu5050@outlook.com",
+    "url": "https://github.com/KaduCmK"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^8.13.0",
+    "nodemon": "^2.0.15"
+  },
+  "dependencies": {
+    "@discordjs/builders": "^0.13.0",
+    "@discordjs/rest": "^0.4.1",
+    "discord-api-types": "^0.31.2",
+    "discord.js": "^13.6.0"
+  }
+}
