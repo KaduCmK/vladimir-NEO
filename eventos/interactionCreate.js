@@ -16,6 +16,11 @@ module.exports = {
         }
 
         // Registrar o comando requisitado no console
-        console.log(`[${interaction.createdAt.toUTCString()}] -  ${interaction.user.tag} utilizou o comando /${interaction.commandName} no canal #${interaction.channel.name}`);
+        hora = interaction.createdAt.getHours().toLocaleString(undefined, {minimumIntegerDigits: 2});
+        min = interaction.createdAt.getMinutes().toLocaleString(undefined, {minimumIntegerDigits: 2});
+        dia = interaction.createdAt.getDate().toLocaleString(undefined, {minimumIntegerDigits: 2});
+        mes = (interaction.createdAt.getMonth()+1).toLocaleString(undefined, {minimumIntegerDigits: 2});
+        ano = interaction.createdAt.getFullYear();
+        console.log(`${hora}:${min} ${dia}/${mes}/${ano} -  ${interaction.user.tag} utilizou /${interaction.commandName} no canal #${interaction.channel.name}, servidor '${interaction.guild.name}'`);
     }
 }
