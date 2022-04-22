@@ -9,12 +9,32 @@ const {
 } = require('@discordjs/voice');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
 const fluentffmpeg = require('fluent-ffmpeg')
+const { Builder, By } = require('selenium-webdriver')
+const chrome = require('selenium-webdriver/chrome')
 
 
 // Criação de assets utilizados ao longo do ciclo de vida do bot
 let player = createAudioPlayer()
 fluentffmpeg.setFfmpegPath(ffmpegPath)
 const tempo = {}
+
+// Caso o user insira um link inválido, o bot irá procurar por nome com a função abaixo
+async function searchByName(search) {
+    let query = search.replace(' ', '+')
+
+    let driver = await new Builder()
+        .forBrowser('chrome')
+        .setChromeOptions(new chrome.Options().headless().windowSize({width: 1280, height: 720 }))
+        .build()
+
+    await driver.get(`https://www.youtube.com/results?search_query=${query}`)
+    driver.manage().setTimeouts({implicit: 1})
+
+    let link = await driver.findElement(By.id('video-title')).getAttribute('href')
+    
+    await driver.close()
+    return link
+}
 
 
 // Comandos
@@ -28,57 +48,64 @@ module.exports = {
         .setDescription('Toca uma música nova, ou continua a atual')
         .addStringOption(option => option.setName('link').setDescription('Link da música a ser tocada'))
         )
-        .addSubcommand(subcommand =>
-            subcommand
-            .setName('pause')
-            .setDescription('Pausa a música atual')
-            )
-            .addSubcommand(subcommand =>
-                subcommand
-                .setName('resume')
-                .setDescription('Continua a música, se estiver pausada')
-                )
-                .addSubcommand(subcommand =>
-                    subcommand
-                    .setName('stop')
-                    .setDescription('Para toda as músicas e desconecta o player')
-                    ),
-                    async execute(interaction) {
-                        
-                        var connection = joinVoiceChannel({
-                            channelId: interaction.member.voice.channelId,
-                            guildId: interaction.guildId,
-                            adapterCreator: interaction.guild.voiceAdapterCreator,
-                        })
+    .addSubcommand(subcommand =>
+        subcommand
+        .setName('pause')
+        .setDescription('Pausa a música atual')
+        )
+    .addSubcommand(subcommand =>
+        subcommand
+        .setName('resume')
+        .setDescription('Continua a música, se estiver pausada')
+        )
+    .addSubcommand(subcommand =>
+        subcommand
+        .setName('stop')
+        .setDescription('Para toda as músicas e desconecta o player')
+        )
+    .addSubcommand(subcommand =>
+        subcommand
+        .setName('test')
+        .setDescription('test command')
+        ),
 
-                        // play command
-                        if (interaction.options.getSubcommand() == 'play') {
+    async execute(interaction) {
+                        
+        var connection = joinVoiceChannel({
+            channelId: interaction.member.voice.channelId,
+            guildId: interaction.guildId,
+            adapterCreator: interaction.guild.voiceAdapterCreator,
+            })
+
+        // play command
+        if (interaction.options.getSubcommand() == 'play') {
                             
-                            // Caso não seja fornecido um link o comando chama player.unpause()
-                            if (!interaction.options.getString('link')) {
-                                player.unpause()
-                                await interaction.reply('Resumindo...')
+            // Caso não seja fornecido um link o comando chama player.unpause()
+            if (!interaction.options.getString('link')) {
+                player.unpause()
+                await interaction.reply('Resumindo...')
             }
             else {
                 if (interaction.member.voice.channel) {
                     await interaction.reply(`Conectado em ${interaction.member.voice.channel}`)
-                    url = interaction.options.getString('link')
-                    if (!ytdl.validateURL(url)) {
-                        await interaction.followUp('Insira uma URL válida!')
+                    search = interaction.options.getString('link')
+
+                    if (!ytdl.validateURL(search)) {
+                        await interaction.editReply(`Conectado em ${interaction.member.voice.channel}\nProcurando por **${search}**...`)
+                        url = await searchByName(search).then(content => {return content})
                     }
-                    else {
-                        player = createAudioPlayer()
-                        const stream = ytdl(url, { quality: 'highestaudio', filter: form => {
-                            if (form.bitrate && interaction.member.voice.channel?.bitrate) return form.bitrate <= interaction.member.voice.channel.bitrate;
-                            return false
-                        }})
-                        const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary })
-                        connection.subscribe(player)
-                        player.play(resource)
+                
+                    player = createAudioPlayer()
+                    const stream = ytdl(url, { quality: 'highestaudio', filter: form => {
+                        if (form.bitrate && interaction.member.voice.channel?.bitrate) return form.bitrate <= interaction.member.voice.channel.bitrate;
+                        return false
+                    }})
+                    const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary })
+                    connection.subscribe(player)
+                    player.play(resource)
                         
-                        console.log('Contando tempo de execução...')
-                        tempo['start'] = Math.round(performance.now())
-                    }
+                    console.log('Contando tempo de execução...')
+                    tempo['start'] = Math.round(performance.now())
                     
                 } 
                 else {
@@ -97,6 +124,9 @@ module.exports = {
         else if (interaction.options.getSubcommand() == 'stop') {
             player.stop(true)
             await interaction.reply('Encerrando player...')
+        }
+        else if (interaction.options.getSubcommand() == 'test') {
+            
         }
 
 

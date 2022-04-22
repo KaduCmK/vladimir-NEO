@@ -30,6 +30,7 @@
     "ffmpeg-static": "^4.4.1",
     "fluent-ffmpeg": "^2.1.2",
     "libsodium-wrappers": "^0.7.10",
+    "selenium-webdriver": "^4.1.1",
     "ytdl-core": "^4.11.0"
   }
 }
