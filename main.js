@@ -3,7 +3,7 @@ const { token } = require('./config.json');
 const fs = require('node:fs');
 
 const myIntents = new Intents();
-myIntents.add(Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES)
+myIntents.add(Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES, Intents.FLAGS.GUILD_WEBHOOKS)
 
 const client = new Client({ intents: myIntents });
 

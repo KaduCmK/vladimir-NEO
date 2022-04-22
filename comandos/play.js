@@ -10,40 +10,69 @@ const {
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
 const fluentffmpeg = require('fluent-ffmpeg')
 
+const player = createAudioPlayer()
+
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('play')
-        .setDescription('toca música a partir de um link do Youtube')
-        .addStringOption(option => 
-            option.setName('link')
-                .setDescription('Insira o link do vídeo')
-                .setRequired(true)
-        ),
+        .setName('song')
+        .setDescription('Tocar músicas a partir do Youtube')
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('play')
+                .setDescription('Toca uma música nova, ou continua a atual')
+                .addStringOption(option => option.setName('link').setDescription('Link da música a ser tocada'))
+            )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('pause')
+                .setDescription('Pausa a música atual')
+            )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('resume')
+                .setDescription('Continua a música, se estiver pausada')
+            ),
     async execute(interaction) {
-
+        
         fluentffmpeg.setFfmpegPath(ffmpegPath)
 
-        if (interaction.member.voice.channel) {
-            var connection = joinVoiceChannel({
-                channelId: interaction.member.voice.channelId,
-                guildId: interaction.guildId,
-                adapterCreator: interaction.guild.voiceAdapterCreator,
-            })
-            interaction.reply(`Conectado em ${interaction.member.voice.channel}`)
-        } else {
-            interaction.reply('Você não está em nenhum canal de voz!')
+        if (interaction.options.getSubcommand() == 'play'){
+
+            if (!interaction.options.getString('link')) {
+                player.unpause()
+                interaction.reply('Resumindo...')
+            }
+            else {
+                if (interaction.member.voice.channel) {
+                    var connection = joinVoiceChannel({
+                        channelId: interaction.member.voice.channelId,
+                        guildId: interaction.guildId,
+                        adapterCreator: interaction.guild.voiceAdapterCreator,
+                    })
+                    interaction.reply(`Conectado em ${interaction.member.voice.channel}`)
+                } else {
+                    interaction.reply('Você não está em nenhum canal de voz!')
+                }
+
+                url = interaction.options.getString('link')
+                const stream = ytdl(url, { quality: 'highestaudio', filter: form => {
+                    if (form.bitrate && interaction.member.voice.channel?.bitrate) return form.bitrate <= interaction.member.voice.channel.bitrate;
+                    return false
+                }})
+                const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary })
+
+                connection.subscribe(player)
+                player.play(resource)
+            }
         }
-
-        url = interaction.options.getString('link')
-        const stream = ytdl(url, { quality: 'lowestaudio', filter: form => {
-            if (form.bitrate && interaction.member.voice.channel?.bitrate) return form.bitrate <= interaction.member.voice.channel.bitrate;
-            return false
-        }})
-        const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary })
-        const player = createAudioPlayer()
-
-        player.play(resource)
-        connection.subscribe(player)
+        else if (interaction.options.getSubcommand() == 'pause') {
+            console.log(player.pause())
+            interaction.reply('Pausando...')
+        }
+        else if (interaction.options.getSubcommand() == 'resume') {
+            player.unpause()
+            interaction.reply('Resumindo...')
+        }
         
         const tempo = {}
         player.on(AudioPlayerStatus.Playing, () => {
