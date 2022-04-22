@@ -10,7 +10,10 @@ const {
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
 const fluentffmpeg = require('fluent-ffmpeg')
 
+
 const player = createAudioPlayer()
+fluentffmpeg.setFfmpegPath(ffmpegPath)
+
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -31,24 +34,30 @@ module.exports = {
             subcommand
                 .setName('resume')
                 .setDescription('Continua a música, se estiver pausada')
+            )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('stop')
+                .setDescription('Para toda as músicas e encerra o player')
             ),
     async execute(interaction) {
-        
-        fluentffmpeg.setFfmpegPath(ffmpegPath)
 
+        const connection = joinVoiceChannel({
+            channelId: interaction.member.voice.channelId,
+            guildId: interaction.guildId,
+            adapterCreator: interaction.guild.voiceAdapterCreator,
+        })
+
+        // play command
         if (interaction.options.getSubcommand() == 'play'){
 
+            // Caso não seja fornecido um link o comando chama player.unpause()
             if (!interaction.options.getString('link')) {
                 player.unpause()
                 interaction.reply('Resumindo...')
             }
             else {
                 if (interaction.member.voice.channel) {
-                    var connection = joinVoiceChannel({
-                        channelId: interaction.member.voice.channelId,
-                        guildId: interaction.guildId,
-                        adapterCreator: interaction.guild.voiceAdapterCreator,
-                    })
                     interaction.reply(`Conectado em ${interaction.member.voice.channel}`)
                 } else {
                     interaction.reply('Você não está em nenhum canal de voz!')
@@ -65,13 +74,18 @@ module.exports = {
                 player.play(resource)
             }
         }
+        else if (interaction.options.getSubcommand() == 'resume') {
+            player.unpause()
+            interaction.reply('Resumindo...')
+        }
         else if (interaction.options.getSubcommand() == 'pause') {
             console.log(player.pause())
             interaction.reply('Pausando...')
         }
-        else if (interaction.options.getSubcommand() == 'resume') {
-            player.unpause()
-            interaction.reply('Resumindo...')
+        else if (interaction.options.getSubcommand() == 'stop') {
+            player.stop()
+            connection.destroy()
+            interaction.reply('Encerrando player...')
         }
         
         const tempo = {}
@@ -80,7 +94,7 @@ module.exports = {
             tempo['start'] = Math.round(performance.now())
 
             ytdl.getInfo(url).then(info => {
-                interaction.editReply(`Conectado em ${interaction.member.voice.channel}\n\nTocando agora: ${info.videoDetails.title}`)
+                interaction.editReply(`Conectado em ${interaction.member.voice.channel}\n\nTocando agora: [${info.videoDetails.title}](${url})`)
             })
         })
         
