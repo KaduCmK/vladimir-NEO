@@ -21,6 +21,6 @@ module.exports = {
         dia = interaction.createdAt.getDate().toLocaleString(undefined, {minimumIntegerDigits: 2});
         mes = (interaction.createdAt.getMonth()+1).toLocaleString(undefined, {minimumIntegerDigits: 2});
         ano = interaction.createdAt.getFullYear();
-        console.log(`${hora}:${min} ${dia}/${mes}/${ano} -  ${interaction.user.tag} utilizou /${interaction.commandName} ${interaction.options.getSubcommand()} no canal #${interaction.channel.name}, servidor '${interaction.guild.name}'`);
+        console.log(`${hora}:${min} ${dia}/${mes}/${ano} -  ${interaction.user.tag} utilizou /${interaction.commandName} no canal #${interaction.channel.name}, servidor '${interaction.guild.name}'`);
     }
 }
