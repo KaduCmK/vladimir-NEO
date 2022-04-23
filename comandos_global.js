@@ -15,11 +15,11 @@ const rest = new REST({ version: '9' }).setToken(token);
 
 (async () => {
 	try {
-		console.log('Escopo: comandos de servidor')
+		console.log('ATENÇÃO: ESCOPO GLOBAL')
 		console.log('Atualizando comandos...');
 
 		await rest.put(
-			Routes.applicationGuildCommands(clientId, guildId),
+			Routes.applicationCommands(clientId),
 			{ body: commands },
 		);
 

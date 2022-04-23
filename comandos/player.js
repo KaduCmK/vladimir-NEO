@@ -93,6 +93,8 @@ module.exports = {
                     if (!ytdl.validateURL(search)) {
                         await interaction.editReply(`Conectado em ${interaction.member.voice.channel}\nProcurando por **${search}**...`)
                         url = await searchByName(search).then(content => {return content})
+                    } else {
+                        url = search
                     }
                 
                     player = createAudioPlayer()
