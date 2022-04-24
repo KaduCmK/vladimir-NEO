@@ -18,6 +18,7 @@ let player = createAudioPlayer()
 fluentffmpeg.setFfmpegPath(ffmpegPath)
 const tempo = {}
 const fila = []
+let connection;
 
 // Grenciador da fila de músicas:
 function queueManager() {
@@ -76,49 +77,61 @@ module.exports = {
         ),
 
     async execute(interaction) {
-        
-        const connection = joinVoiceChannel({
-            channelId: interaction.member.voice.channelId,
-            guildId: interaction.guildId,
-            adapterCreator: interaction.guild.voiceAdapterCreator,
-            })
-                              
+           
         // play command
         if (interaction.options.getSubcommand() == 'play') {    
             
-            // Caso não seja fornecido um link o comando chama player.unpause()
-            if (!interaction.options.getString('link')) {
-                player.unpause()
-                await interaction.reply('Resumindo...')
+            // user não está conectado em nenhuma call -> não fazer nada
+            if (!interaction.member.voice.channelId) {
+                await interaction.reply('Você não está em um canal de voz!')
+                return
             }
+            // user está em call mas o bot não (do servidor) -> conectar na call do user
+            else if (!(interaction.client.voice.adapters.has(interaction.guildId))) {
+                connection = joinVoiceChannel({
+                    channelId: interaction.member.voice.channelId,
+                    guildId: interaction.guildId,
+                    adapterCreator: interaction.guild.voiceAdapterCreator,
+                    })
+                await interaction.reply(`Conectado em ${interaction.member.voice.channel}`)      
+            }
+            // ambos estão em call no mesmo servidor, mas as calls são diferentes
+            else if (!(interaction.member.voice.channel.members.has(interaction.client.user.id))) {
+                await interaction.reply('Já estou em um canal de voz!')
+                return
+            }
+            // Ambos estão na mesma call, mas não foi fornecido um link -> despausar música, caso tenha alguma tocando
+            else if (!(interaction.options.getString('link'))) {
+                await interaction.reply('Resumindo...')
+                player.unpause()
+            }
+            // Ambos estão na mesma call e foi fornecido um input: tocar a música fornecida
             else {
-                if (interaction.member.voice.channel) {
-                    await interaction.reply(`Conectado em ${interaction.member.voice.channel}`)
-                    search = interaction.options.getString('link')
-
-                    if (!ytdl.validateURL(search)) {
-                        await interaction.editReply(`Conectado em ${interaction.member.voice.channel}\nProcurando por **${search}**...`)
-                        url = await searchByName(search).then(content => {return content})
-                    } else {
-                        url = search
-                    }
-                
-                    player = createAudioPlayer()
-                    const stream = ytdl(url, { quality: 'highestaudio', filter: form => {
-                        if (form.bitrate && interaction.member.voice.channel?.bitrate) return form.bitrate <= interaction.member.voice.channel.bitrate;
-                        return false
-                    }})
-                    const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary })
-                    connection.subscribe(player)
-                    player.play(resource)
-                        
-                    console.log('Contando tempo de execução...')
-                    tempo['start'] = Math.round(performance.now())
-                    
-                } 
-                else {
-                    await interaction.reply('Você não está em nenhum canal de voz!')
+                search = await interaction.options.getString('link')
+                try {
+                    await interaction.editReply(`Conectado em ${interaction.member.voice.channel}\nProcurando...`)
+                } catch {
+                    await interaction.reply(`Procurando...`)
                 }
+                
+                // caso search não seja um link válido do youtube, procurar no youtube e retornar o link do primeiro video da busca
+                if (!ytdl.validateURL(search)) {
+                    url = await searchByName(search).then(content => {return content})
+                } else {
+                    url = search
+                }
+                
+                player = createAudioPlayer()
+                const stream = ytdl(url, { quality: 'highestaudio', filter: form => {
+                    if (form.bitrate && interaction.member.voice.channel?.bitrate) return form.bitrate <= interaction.member.voice.channel.bitrate;
+                    return false
+                }})
+                const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary })
+                connection.subscribe(player)
+                player.play(resource)
+                    
+                console.log('Contando tempo de execução...')
+                tempo['start'] = Math.round(performance.now())
             }
         }
         else if (interaction.options.getSubcommand() == 'resume') {
