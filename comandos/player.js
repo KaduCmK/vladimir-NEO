@@ -17,6 +17,12 @@ const chrome = require('selenium-webdriver/chrome')
 let player = createAudioPlayer()
 fluentffmpeg.setFfmpegPath(ffmpegPath)
 const tempo = {}
+const fila = []
+
+// Grenciador da fila de músicas:
+function queueManager() {
+
+}
 
 // Caso o user insira um link inválido, o bot irá procurar por nome com a função abaixo
 async function searchByName(search) {
@@ -24,7 +30,7 @@ async function searchByName(search) {
 
     let driver = await new Builder()
         .forBrowser('chrome')
-        .setChromeOptions(new chrome.Options().headless().windowSize({width: 1280, height: 720 }))
+        .setChromeOptions(new chrome.Options().headless())
         .build()
 
     await driver.get(`https://www.youtube.com/results?search_query=${query}`)
@@ -70,16 +76,16 @@ module.exports = {
         ),
 
     async execute(interaction) {
-                        
-        var connection = joinVoiceChannel({
+        
+        const connection = joinVoiceChannel({
             channelId: interaction.member.voice.channelId,
             guildId: interaction.guildId,
             adapterCreator: interaction.guild.voiceAdapterCreator,
             })
-
+                              
         // play command
-        if (interaction.options.getSubcommand() == 'play') {
-                            
+        if (interaction.options.getSubcommand() == 'play') {    
+            
             // Caso não seja fornecido um link o comando chama player.unpause()
             if (!interaction.options.getString('link')) {
                 player.unpause()
@@ -125,6 +131,7 @@ module.exports = {
         }
         else if (interaction.options.getSubcommand() == 'stop') {
             player.stop(true)
+            connection.disconnect()
             await interaction.reply('Encerrando player...')
         }
         else if (interaction.options.getSubcommand() == 'test') {
@@ -141,7 +148,11 @@ module.exports = {
             })
         })      
         
-        player.on(AudioPlayerStatus.Idle, () => connection.destroy())
+        player.on(AudioPlayerStatus.Idle, () => {
+            if (fila[0]) {
+
+            }
+        })
 
         player.on('error', error => {
             tempo['end'] = Math.round(performance.now())
