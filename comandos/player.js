@@ -14,16 +14,13 @@ const chrome = require('selenium-webdriver/chrome')
 
 
 // Criação de assets utilizados ao longo do ciclo de vida do bot
-let player = createAudioPlayer()
 fluentffmpeg.setFfmpegPath(ffmpegPath)
 const tempo = {}
 const fila = []
-let connection;
+let connection, player;
 
 // Grenciador da fila de músicas:
-function queueManager() {
 
-}
 
 // Caso o user insira um link inválido, o bot irá procurar por nome com a função abaixo
 async function searchByName(search) {
@@ -31,7 +28,7 @@ async function searchByName(search) {
 
     let driver = await new Builder()
         .forBrowser('chrome')
-        .setChromeOptions(new chrome.Options().headless())
+        .setChromeOptions(new chrome.Options().headless().windowSize({ width: 1280, height: 720}))
         .build()
 
     await driver.get(`https://www.youtube.com/results?search_query=${query}`)
@@ -69,11 +66,6 @@ module.exports = {
         subcommand
         .setName('stop')
         .setDescription('Para toda as músicas e desconecta o player')
-        )
-    .addSubcommand(subcommand =>
-        subcommand
-        .setName('test')
-        .setDescription('test command')
         ),
 
     async execute(interaction) {
@@ -93,6 +85,7 @@ module.exports = {
                     guildId: interaction.guildId,
                     adapterCreator: interaction.guild.voiceAdapterCreator,
                     })
+                player = createAudioPlayer()
                 await interaction.reply(`Conectado em ${interaction.member.voice.channel}`)      
             }
             // ambos estão em call no mesmo servidor, mas as calls são diferentes
@@ -104,51 +97,70 @@ module.exports = {
             else if (!(interaction.options.getString('link'))) {
                 await interaction.reply('Resumindo...')
                 player.unpause()
+                return
             }
-            // Ambos estão na mesma call e foi fornecido um input: tocar a música fornecida
-            else {
-                search = await interaction.options.getString('link')
-                try {
-                    await interaction.editReply(`Conectado em ${interaction.member.voice.channel}\nProcurando...`)
-                } catch {
-                    await interaction.reply(`Procurando...`)
-                }
+            // Ambos estão na mesma call e foi fornecido um input: tocar a música fornecida          
+            search = await interaction.options.getString('link')
+            
+            await interaction.editReply(`Conectado em ${interaction.member.voice.channel}\nProcurando...`)
                 
-                // caso search não seja um link válido do youtube, procurar no youtube e retornar o link do primeiro video da busca
-                if (!ytdl.validateURL(search)) {
-                    url = await searchByName(search).then(content => {return content})
-                } else {
-                    url = search
-                }
+            // caso search não seja um link válido do youtube, procurar no youtube e retornar o link do primeiro video da busca
+            if (!ytdl.validateURL(search)) {
+                url = await searchByName(search).then(content => {return content})
+            } else {
+                url = search
+            }
                 
-                player = createAudioPlayer()
-                const stream = ytdl(url, { quality: 'highestaudio', filter: form => {
-                    if (form.bitrate && interaction.member.voice.channel?.bitrate) return form.bitrate <= interaction.member.voice.channel.bitrate;
-                    return false
-                }})
-                const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary })
-                connection.subscribe(player)
-                player.play(resource)
+            const stream = ytdl(url, { quality: 'highestaudio', filter: form => {
+                if (form.bitrate && interaction.member.voice.channel?.bitrate) return form.bitrate <= interaction.member.voice.channel.bitrate;
+                return false
+            }})
+            const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary })
+            connection.subscribe(player)
+            player.play(resource)
                     
-                console.log('Contando tempo de execução...')
-                tempo['start'] = Math.round(performance.now())
-            }
+            console.log('Contando tempo de execução...')
+            tempo['start'] = Math.round(performance.now())
         }
         else if (interaction.options.getSubcommand() == 'resume') {
+            if (!interaction.member.voice.channelId) {
+                await interaction.reply('Você não está em um canal de voz!')
+                return
+            }
+            else if (!(interaction.member.voice.channel.members.has(interaction.client.user.id))) {
+                await interaction.reply('Já estou em um canal de voz!')
+                return
+            }
+
             player.unpause()
             await interaction.reply('Resumindo...')
         }
         else if (interaction.options.getSubcommand() == 'pause') {
+            if (!interaction.member.voice.channelId) {
+                await interaction.reply('Você não está em um canal de voz!')
+                return
+            }
+            else if (!(interaction.member.voice.channel.members.has(interaction.client.user.id))) {
+                await interaction.reply('Já estou em um canal de voz!')
+                return
+            }
+
             console.log(player.pause())
             await interaction.reply('Pausando...')
         }
         else if (interaction.options.getSubcommand() == 'stop') {
+            if (!interaction.member.voice.channelId) {
+                await interaction.reply('Você não está em um canal de voz!')
+                return
+            }
+            else if (!(interaction.member.voice.channel.members.has(interaction.client.user.id))) {
+                await interaction.reply('Já estou em um canal de voz!')
+                return
+            }
+
             player.stop(true)
             connection.disconnect()
             await interaction.reply('Encerrando player...')
-        }
-        else if (interaction.options.getSubcommand() == 'test') {
-            
         }
 
 
