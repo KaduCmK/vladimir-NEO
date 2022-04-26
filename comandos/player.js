@@ -111,10 +111,7 @@ module.exports = {
                 url = search
             }
                 
-            const stream = ytdl(url, { quality: 'highestaudio', filter: form => {
-                if (form.bitrate && interaction.member.voice.channel?.bitrate) return form.bitrate <= interaction.member.voice.channel.bitrate;
-                return false
-            }})
+            const stream = ytdl(url, { filter: 'audioonly' })
             const resource = createAudioResource(stream, { inputType: StreamType.Arbitrary })
             connection.subscribe(player)
             player.play(resource)
