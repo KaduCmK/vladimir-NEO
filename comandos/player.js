@@ -181,10 +181,7 @@ module.exports = {
             console.error(`${error} - Tentando reconectar...`)
             let elapsed = tempo['end'] - tempo['start']
 
-            const song = ytdl(url, { quality: 'lowestaudio', highWaterMark: 64, filter: form => {
-                if (form.bitrate && interaction.member.voice.channel?.bitrate) return form.bitrate <= interaction.member.voice.channel.bitrate;
-                return false
-            }})
+            const song = ytdl(url, { highWaterMark: 64, filter: 'audioonly' })
             const retry = fluentffmpeg({source: song}).toFormat('mp3').setStartTime(Math.ceil(elapsed/1000))
             const resourceretry = createAudioResource(retry, { inputType: StreamType.Arbitrary })
             
