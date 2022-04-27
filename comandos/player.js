@@ -101,11 +101,11 @@ module.exports = {
             }
             // Ambos estão na mesma call e foi fornecido um input: tocar a música fornecida          
             search = await interaction.options.getString('link')
-            
-            await interaction.editReply(`Conectado em ${interaction.member.voice.channel}\nProcurando...`)
+        
                 
             // caso search não seja um link válido do youtube, procurar no youtube e retornar o link do primeiro video da busca
             if (!ytdl.validateURL(search)) {
+                interaction.channel.send(`Procurando por **${search}**`)
                 url = await searchByName(search).then(content => {return content})
             } else {
                 url = search
@@ -166,7 +166,7 @@ module.exports = {
         player.on(AudioPlayerStatus.Playing, () => {
             
             ytdl.getInfo(url).then(info => {
-                interaction.followUp(`Tocando agora: [${info.videoDetails.title}](${url})`)
+                interaction.channel.send(`Tocando agora: [${info.videoDetails.title}](${url})`)
             })
         })      
         
