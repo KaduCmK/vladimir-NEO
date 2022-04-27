@@ -66,13 +66,25 @@ module.exports = {
         subcommand
         .setName('stop')
         .setDescription('Para toda as músicas e desconecta o player')
+        )
+    .addSubcommand(subcommand =>
+        subcommand
+        .setName('skip')
+        .setDescription('(INOPERANTE) pula a música atual')
+        )
+    .addSubcommand(subcommand =>
+        subcommand
+        .setName('seek')
+        .setDescription('Adianta a música para um tempo')
+        .addStringOption(option => option.setName('tempo').setDescription('Timestamp da música'))
         ),
 
     async execute(interaction) {
+
+        
            
         // play command
         if (interaction.options.getSubcommand() == 'play') {    
-            
             // user não está conectado em nenhuma call -> não fazer nada
             if (!interaction.member.voice.channelId) {
                 await interaction.reply('Você não está em um canal de voz!')
@@ -88,7 +100,10 @@ module.exports = {
                 player = createAudioPlayer()
                 await interaction.reply(`Conectado em ${interaction.member.voice.channel}`)      
             }
-            // ambos estão em call no mesmo servidor, mas as calls são diferentes
+            else if (!interaction.member.voice.channelId) {
+                await interaction.reply('Você não está em um canal de voz!')
+                return
+            }
             else if (!(interaction.member.voice.channel.members.has(interaction.client.user.id))) {
                 await interaction.reply('Já estou em um canal de voz!')
                 return
@@ -159,6 +174,24 @@ module.exports = {
             connection.disconnect()
             await interaction.reply('Encerrando player...')
         }
+        else if (interaction.options.getSubcommand() == 'seek') {
+            if (!interaction.member.voice.channelId) {
+                await interaction.reply('Você não está em um canal de voz!')
+                return
+            }
+            else if (!(interaction.member.voice.channel.members.has(interaction.client.user.id))) {
+                await interaction.reply('Já estou em um canal de voz!')
+                return
+            }
+
+            let position = interaction.options.getString('tempo')
+
+            const seeksong = ytdl(url, { filter: 'audioonly' })
+            const seekretry = fluentffmpeg({source: seeksong}).toFormat('mp3').setStartTime(position)
+            const seekresource = createAudioResource(seekretry, { inputType: StreamType.Arbitrary })
+
+            player.play(seekresource)
+        }
 
 
         // Eventos
@@ -172,7 +205,7 @@ module.exports = {
         
         player.on(AudioPlayerStatus.Idle, () => {
             if (fila[0]) {
-
+                
             }
         })
 
