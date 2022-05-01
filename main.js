@@ -1,6 +1,6 @@
 const { Client, Collection, Intents } = require('discord.js');
-const { token } = require('./config.json');
 const fs = require('node:fs');
+const { token } = require('./config.json')
 
 const myIntents = new Intents();
 myIntents.add(Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES, Intents.FLAGS.GUILD_WEBHOOKS)
