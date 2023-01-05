@@ -27,4 +27,8 @@ for (const file of eventFiles) {
     }
 }
 
+players = {}
+
+module.exports = players
+
 client.login(token);

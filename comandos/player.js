@@ -11,6 +11,7 @@ const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
 const fluentffmpeg = require('fluent-ffmpeg')
 const { Builder, By } = require('selenium-webdriver')
 const chrome = require('selenium-webdriver/chrome')
+const { players } = require('../main.js')
 
 
 // Criação de assets utilizados ao longo do ciclo de vida do bot
@@ -28,7 +29,7 @@ async function searchByName(search) {
 
     let driver = await new Builder()
         .forBrowser('chrome')
-        .setChromeOptions(new chrome.Options().headless().windowSize({ width: 1280, height: 720}))
+        .setChromeOptions(new chrome.Options().windowSize({ width: 1280, height: 720}))
         .build()
 
     await driver.get(`https://www.youtube.com/results?search_query=${query}`)
@@ -120,7 +121,7 @@ module.exports = {
                 
             // caso search não seja um link válido do youtube, procurar no youtube e retornar o link do primeiro video da busca
             if (!ytdl.validateURL(search)) {
-                interaction.channel.send(`Procurando por **${search}**`)
+                interaction.channel.send(`Procurando...`)
                 url = await searchByName(search).then(content => {return content})
             } else {
                 url = search
@@ -199,7 +200,7 @@ module.exports = {
         player.on(AudioPlayerStatus.Playing, () => {
             
             ytdl.getInfo(url).then(info => {
-                interaction.channel.send(`Tocando agora: [${info.videoDetails.title}](${url})`)
+                interaction.channel.send(`[embed] Tocando agora: **${info.videoDetails.title}**`)
             })
         })      
         
